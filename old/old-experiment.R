@@ -16,13 +16,23 @@ library("rpart")
 
 ### Defining the parametes
 
+TEST = FALSE # whether to conduct a test run from which to estimate the total runtime
 SEED = 1 # is set here but is also used in batchtools
 set.seed(SEED)
-EVALS_XGBOOST = 500
+if (TEST) {
+  EVALS_XGBOOST = 2
+} else {
+  EVALS_XGBOOST = 500
+}
 
 TUNING_BATCH_SIZE = 10
 
-LEARNERS = c("ranger", "rpart", "xgboost", "cv_glmnet")
+if (TEST) {
+  LEARNERS = c("ranger", "rpart", "xgboost", "gam", "cv_glmnet")
+} else {
+  # might add the gam later again when the rest is done
+  LEARNERS = c("ranger", "rpart", "xgboost", "cv_glmnet")
+}
 
 # Define tasks and resmaplings
 task_ids = read.csv("ids.csv")[["id"]]
@@ -32,8 +42,10 @@ resamplings = lapply(task_ids, function(task_id) rsmp("oml", task_id = task_id))
 #' @description
 #' This function is used to create the inner resampling for the tuning.
 #' It uses the same heuristic as the one we use to create the outer resampling
-
 make_inner_resampling = function(task) {
+  if (TEST) {
+    return(rsmp("holdout"))
+  }
   if (task$nrow <= 10000) {
     resampling = rsmp("cv", folds = 10)
   } else if (task$nrow <= 100000) {
@@ -104,7 +116,11 @@ make_learner = function(learner_id, task) {
       ppl("robustify", learner = base_learner, task = task) %>>% base_learner
     )
   } else if (learner_id == "xgboost") {
-    batch_size = TUNING_BATCH_SIZE
+    if (TEST) {
+      batch_size = 2
+    } else {
+      batch_size = TUNING_BATCH_SIZE
+    }
 
     learner_tuned = auto_tuner(
       tuner = tnr("random_search", batch_size = batch_size), # this does not restrict us as long as we use less than 100 cores
@@ -133,8 +149,6 @@ make_learner = function(learner_id, task) {
   #    )
   learner$fallback = lrn("regr.featureless")
   learner$encapsulate = c(train = "try", predict = "try")
-  # This is important! Otherwise we are running into bugs from mlr3pipelines regarding the hashes.
-  learner$id = paste0(learner_id, ".", task$id)
   return(learner)
 }
 
@@ -155,23 +169,91 @@ designs = lapply(LEARNERS, function(learner_id) {
 names(designs) = LEARNERS
 
 design = rbindlist(designs)
-saveRDS(design, "design-final.rds")
 
 setattr(design, "class", c("benchmark_grid", "data.table", "data.frame"))
 
-reg_path = "/gscratch/sfische6/experiments-final"
-if (dir.exists(reg_path)) {
-  stop("Directory alrady exists")
-} else {
-  # We need to set the working directory to parallelize xgboost
-  reg = makeExperimentRegistry(
-    reg_path, 
-    seed = SEED, 
-    package = "mlr3verse",
-    work.dir = "/home/sfische6/paper_2023_regression_suite"
+if (TEST) {
+  test_path = "/gscratch/sfische6/experiments-test"
+  if (dir.exists(test_path)) {
+    reg = loadRegistry(test_path, writeable = TRUE)
+  } else {
+    reg = makeExperimentRegistry(
+      test_path,
+      seed = SEED,
+      package = "mlr3verse",
+      work.dir = "/home/sfische6/paper_2023_regression_suite"
     )
+  }
+} else {
+  reg_path = "/gscratch/sfische6/experiments-final"
+  if (dir.exists(reg_path)) {
+    reg = loadRegistry(reg_path, writeable = TRUE)
+  } else {
+    # We need to set the working directory to parallelize xgboost
+    reg = makeExperimentRegistry(
+      reg_path, 
+      seed = SEED, 
+      package = "mlr3verse",
+      work.dir = "/home/sfische6/paper_2023_regression_suite"
+      )
+  }
 }
 
-saveRDS(mlr3misc::map_chr(design$learner, "hash"), "experiment-final-hashes.rds")
-
 batchmark(design, store_models = FALSE, reg = reg)
+
+
+
+if (TEST) {
+  resources_small = list(walltime = 100L, memory = 1000, ntasks = 1L, ncpus = 1L, nodes = 1L, clusters = "beartooth")
+  resources_medium = list(walltime = 600L, memory = 3000, ntasks = 1L, ncpus = 1L, nodes = 1L, clusters = "beartooth")
+  resources_large = list(walltime = 1200L, memory = 6000, ntasks = 1L, ncpus = 1L, nodes = 1L, clusters = "beartooth")
+
+  is_gam = grepl(mlr3misc::ids(design$learner), pattern = "regr.gam")
+  task_table = data.table(
+    task_id = mlr3misc::ids(design[is_gam, ]$task),
+    nrow = mlr3misc::map_int(design[is_gam, ]$task, "nrow"),
+    ncol = mlr3misc::map_int(design[is_gam, ]$task, "ncol")
+  )
+
+  job_table = getJobTable(reg = reg)
+  job_table = unwrap(job_table)
+  job_table = job_table[,
+    .(job.id, learner_id, task_id, resampling_id, repl, learner_hash)
+  ]
+  job_table = merge(job_table, task_table, by = "task_id", all.x = TRUE)
+  # We get one ID of each experiment.
+  # W
+  unique_ids = job_table[repl == 1, .(job.id)][[1L]]
+  # submitJobs(unique_ids)
+  
+  # TODO: Also differentiate according to Learner maybe
+  for (unique_id in unique_ids) {
+    nrow = job_table[job.id == unique_id, "nrow"][[1L]]
+    learner_id = job_table[job.id == unique_id, "learner_id"][[1L]]
+    is_xgboost = grepl(learner_id, pattern = "regr.xgboost")
+    is_ranger = grepl(learner_id, pattern = "regr.ranger")
+    is_gam = grepl(learner_id, pattern = "regr.gam")
+    if (nrow <= 1000) {
+      resources = resources_small
+    } else if (nrow <= 10000) {
+      resources = resources_medium
+    } else if (nrow <= 100000) {
+      resources = resources_large
+    } else {
+      stop("Too many observations")
+    }
+    if (is_xgboost) {
+      resources$ncpus = 2L
+      resources$walltime = resources$walltime * 6
+    }
+    if (is_gam) {
+      resources$walltime = resources$walltime * 2
+    }
+    if (is_ranger) {
+      resources$walltime = resources$walltime * 3
+    }
+    submitJobs(unique_id, resources = resources)
+  }
+} else {
+  stop("Not defined yet.")
+}

@@ -13,6 +13,8 @@ assert_true(nrow(jt) == nrow(info))
 
 unique_chunks = unique(info$chunk)
 
+stopifnot(max(table(unique_chunks)) <= 100)
+
 summary = data.table(
     learner_id = info$learner_id,
     task_id = info$task_id,
@@ -22,34 +24,22 @@ summary = data.table(
     chunk = info$chunk
 )
 
-info = info[job.id %in% findNotSubmitted()[[1L]], ]
+expired = findExpired()
+
+info = info[job.id %in% expired[[1]] , ]
 unique_chunks = unique(info$chunk)
 
-for (unique_chunk in unique_chunks) {
-    job_subset = info[chunk == unique_chunk, ]
-    submission_table = data.table(job.id = job_subset$job.id, chunk = unique_chunk)
-    resources = job_subset$new_resources[[1L]]
-    resources$walltime = resources$walltime * 2
-    submitJobs(submission_table, resources = resources)
-}
+info = info[job.id %in% findNotSubmitted()[[1]] , ]
+unique_chunks = unique(info$chunk)
 
-## To continue
-
-library(batchtools)
-reg = loadRegistry("/gscratch/sfische6/experiments", writeable = TRUE)
-
-expired = findExpired()[[1L]]
-info = readRDS("submission_table.rds")
-
-info = info[job.id %in% expired, ]
+# maybe we should sort the chunks by runtime
 
 for (unique_chunk in unique_chunks) {
     job_subset = info[chunk == unique_chunk, ]
     submission_table = data.table(job.id = job_subset$job.id, chunk = unique_chunk)
     resources = job_subset$new_resources[[1L]]
-    resources$walltime = resources$walltime * 2
+    resources$walltime = resources$walltime
+    resources$memory = resources$memory
     submitJobs(submission_table, resources = resources)
 }
-
-
 

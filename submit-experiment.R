@@ -24,22 +24,22 @@ summary = data.table(
     chunk = info$chunk
 )
 
-expired = findExpired()
 
-info = info[job.id %in% expired[[1]] , ]
-unique_chunks = unique(info$chunk)
-
-info = info[job.id %in% findNotSubmitted()[[1]] , ]
+expired_or_not_submitted = union(findNotSubmitted()[[1]], findExpired()[[1]])
+info = info[job.id %in% expired_or_not_submitted, ]
 unique_chunks = unique(info$chunk)
 
 # maybe we should sort the chunks by runtime
 
+i = 1
 for (unique_chunk in unique_chunks) {
     job_subset = info[chunk == unique_chunk, ]
     submission_table = data.table(job.id = job_subset$job.id, chunk = unique_chunk)
     resources = job_subset$new_resources[[1L]]
-    resources$walltime = resources$walltime
-    resources$memory = resources$memory
+    resources$ncpus = 16
+    resources$partition = "teton"
+    resources$walltime = resources$walltime * 1.5
+    resources$memory = 5000
     submitJobs(submission_table, resources = resources)
 }
 

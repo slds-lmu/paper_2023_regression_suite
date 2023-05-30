@@ -24,7 +24,7 @@ EVALS_XGBOOST = 500
 
 TUNING_BATCH_SIZE = 10
 
-LEARNERS = c("ranger", "rpart", "xgboost", "cv_glmnet", "gam_custom")
+LEARNERS = c("ranger", "rpart", "xgboost", "cv_glmnet", "gam")
 
 # Define tasks and resmaplings
 task_ids = read.csv("ids.csv")[["id"]]
@@ -69,7 +69,7 @@ make_gam_formula = function(task) {
     column = task$data(cols = feature)[[1L]]
     n_unique = length(unique(column))
     if (type %in% c("integer", "numeric") && n_unique >= 20) {
-      effect = sprintf("s(%s, k = )", feature, k)
+      effect = sprintf("s(%s, k = %s)", feature, k)
     } else {
       effect = feature
     }
@@ -86,7 +86,7 @@ make_gam_formula = function(task) {
 # This learner is used to construct the actual mlr3::Learner from the ids passed through LEARNERS.
 # We robustify the learner and in the case of xgboost we wrap the (robustified) learner in an mlr3tuning::AutoTuner.
 make_learner = function(learner_id, task) {
-  if (learner_id == "gam_custom") {
+  if (learner_id == "gam") {
     base_learner = LearnerRegrGamCustom$new()
   } else {
     base_learner = lrn(paste0("regr.", learner_id))
@@ -134,7 +134,7 @@ make_learner = function(learner_id, task) {
     learner = as_learner(
       ppl("robustify", learner = learner_tuned, task = task) %>>% learner_tuned
     )
-  } else if (learner_id == "gam_custom") {
+  } else if (learner_id == "gam") {
     base_learner = LearnerRegrGamCustom$new()
     base_learner$param_set$set_values(
       formula_fn = make_gam_formula
@@ -175,7 +175,7 @@ setattr(design, "class", c("benchmark_grid", "data.table", "data.frame"))
 
 reg_path = "/gscratch/sfische6/experiments"
 if (dir.exists(reg_path)) {
-  stop("Directory already exists.")
+  #stop("Directory already exists.")
 } else {
   # We need to set the working directory to parallelize xgboost
   reg = makeExperimentRegistry(
@@ -186,6 +186,6 @@ if (dir.exists(reg_path)) {
     )
 }
 
-saveRDS(design, "design.rds")
+#saveRDS(design, "design.rds")
 
-batchmark(design, store_models = FALSE, reg = reg)
+#batchmark(design, store_models = FALSE, reg = reg)

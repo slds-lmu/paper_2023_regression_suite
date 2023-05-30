@@ -32,14 +32,37 @@ unique_chunks = unique(info$chunk)
 # maybe we should sort the chunks by runtime
 
 i = 1
+
+
+gam_ids = unwrap(getJobTable())[startsWith(learner_id, "gam.")]$job.id
+submitJobs(
+  gam_ids,
+  list(memory = 4000, ntasks = 1L, ncpus = 1L, nodes = 1L, clusters = "teton", walltime = 36000)
+)
+
+remainding_ids = findNotSubmitted()[[1L]]
+
+for (id in remainding_ids) {
+  resources = list(memory = 8000, ntasks = 1L, ncpus = 10L, nodes = 1L, clusters = "teton", walltime = 36000 * 2)
+  submitJobs(id, resources)
+}
+
+for (id in gasm_ids) {
+  resources = list()
+  resources =   submitJobs(id, resources)
+}
+
+
 for (unique_chunk in unique_chunks) {
     job_subset = info[chunk == unique_chunk, ]
     submission_table = data.table(job.id = job_subset$job.id, chunk = unique_chunk)
     resources = job_subset$new_resources[[1L]]
     resources$ncpus = 16
     resources$partition = "teton"
-    resources$walltime = resources$walltime * 1.5
-    resources$memory = 5000
+    resources$walltime = resources$walltime * 2
+    resources$memory = 8000
     submitJobs(submission_table, resources = resources)
 }
 
+
+gam_ids = getJobTable() |> unwap()

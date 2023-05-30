@@ -112,7 +112,7 @@ LearnerRegrGamCustom = R6Class("LearnerRegrGamCustom",
       pars = self$param_set$get_values(tags = "predict")
 
       # get newdata and ensure same ordering in train and predict
-      newdata = ordered_features(task, self)
+      newdata = mlr3extralearners:::ordered_features(task, self)
 
       include_se = (self$predict_type == "se")
 

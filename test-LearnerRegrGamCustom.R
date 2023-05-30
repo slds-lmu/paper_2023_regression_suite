@@ -11,6 +11,8 @@ learner$param_set$set_values(
 )
 
 learner$train(task)
+pred = learner$predict(task)
+stopifnot(inherits(pred, "Prediction"))
 
 stopifnot(all(as.character(learner$model$formula) == c("~", "mpg", "am")))
 stopifnot("factor" %in% learner$feature_types)

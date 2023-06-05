@@ -1,12 +1,13 @@
+# Slight adjustment from https://github.com/mlr-org/mlr3extralearners/blob/main/R/learner_mgcv_regr_gam.R
+# * Allow factor variables in features
+# * Implement formula as argument formula_fn
+
 library(R6)
 library(paradox)
 library(mlr3)
 library(mlr3misc)
 library(checkmate)
 
-# Slight adjustment from https://github.com/mlr-org/mlr3extralearners/blob/main/R/learner_mgcv_regr_gam.R
-# * Bugfix to allow factor variable
-# * Implement formula as argument formula_fn
 LearnerRegrGamCustom = R6Class("LearnerRegrGamCustom",
   inherit = LearnerRegr,
 

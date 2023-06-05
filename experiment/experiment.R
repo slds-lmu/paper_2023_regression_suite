@@ -14,7 +14,7 @@ library("xgboost")
 library("glmnet")
 library("rpart")
 
-source("LearnerRegrGamCustom.R")
+source("experiment/LearnerRegrGamCustom.R")
 
 ### Defining the parametes
 
@@ -169,23 +169,21 @@ designs = lapply(LEARNERS, function(learner_id) {
 names(designs) = LEARNERS
 
 design = rbindlist(designs)
-saveRDS(design, "design.rds")
+saveRDS(design, here::here("results", "design.rds"))
 
 setattr(design, "class", c("benchmark_grid", "data.table", "data.frame"))
 
-reg_path = "/gscratch/sfische6/experiments"
+reg_path = getOption("registry_path")
 if (dir.exists(reg_path)) {
-  #stop("Directory already exists.")
+  stop("Directory already exists.")
 } else {
   # We need to set the working directory to parallelize xgboost
   reg = makeExperimentRegistry(
-    reg_path, 
-    seed = SEED, 
+    reg_path,
+    seed = SEED,
     packages = c("mlr3verse", "mlr3misc", "checkmate", "R6", "paradox"),
-    work.dir = "/home/sfische6/paper_2023_regression_suite"
+    work.dir = here::here()
     )
 }
 
-#saveRDS(design, "design.rds")
-
-#batchmark(design, store_models = FALSE, reg = reg)
+batchmark(design, store_models = FALSE, reg = reg)

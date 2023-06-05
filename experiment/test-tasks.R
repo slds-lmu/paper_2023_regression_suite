@@ -2,7 +2,7 @@ library(checkmate)
 library(mlr3misc)
 library(mlr3oml)
 library(mlr3)
-ids = read.csv("ids.csv")[[1L]]
+ids = read.csv(here::here("ids.csv"))[[1L]]
 
 stopifnot(length(ids) == 36)
 

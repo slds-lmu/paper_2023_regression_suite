@@ -17,12 +17,12 @@ library(batchtools)
 # The reason is that the hashes can change after deserialization (we load the design from an .rds file)
 
 # The design was used to create the experiments from the reg
-design = readRDS("design.rds")
-reg = loadRegistry("/gscratch/sfische6/experiments")
+design = readRDS(here::here("results/design.rds"))
+reg = loadRegistry(getOption("registry_path"))
 
 
 # 36 tasks on 5 learners
-stopifnot(nrow(design) == 5 * 36)
+stopifnot(nrow(design) == 5 * 35)
 
 learner_ids = ids(design$learner)
 stopifnot(length(unique(learner_ids)) == length(learner_ids))
@@ -35,7 +35,7 @@ task_hashes = map_chr(design$task, "hash")
 stopifnot(length(unique(resampling_hashes)) == length(unique(task_hashes)))
 
 
-learner_prefixes = c("xgboost", "gam_custom", "cv_glmnet", "rpart", "ranger")
+learner_prefixes = c("xgboost", "gam", "cv_glmnet", "rpart", "ranger")
 
 subsets = lapply(learner_prefixes, function(id) {
   which(grepl(learner_ids, pattern = id))
@@ -43,7 +43,7 @@ subsets = lapply(learner_prefixes, function(id) {
 
 ids_stripped = strsplit(learner_ids, split = ".", fixed = TRUE)
 ids_stripped = map_chr(ids_stripped, 1)
-stopifnot(all(table(ids_stripped) == 36))
+stopifnot(all(table(ids_stripped) == 35))
 expect_set_equal(ids_stripped, learner_prefixes)
 
 jt = unwrap(getJobTable())
@@ -113,7 +113,7 @@ for (learner_prefix in learner_prefixes) {
             stopifnot(learner$base_learner()$param_set$values$alpha == 0)
             nfolds = if (task$nrow <= 10000) 20 else 10
             stopifnot(learner$base_learner()$param_set$values$standardize)
-        } else if (learner_prefix == "gam_custom") {
+        } else if (learner_prefix == "gam") {
             stopifnot(is.function(learner$base_learner()$param_set$values$formula_fn))
 
         } else {

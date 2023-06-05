@@ -28,3 +28,4 @@ bma2 = BenchmarkAggr$new(aggr2)
 plot_cd = autoplot(bma2, type = "cd")
 
 ggsave(plot = plot_cd, here::here("results", "critical_difference.png"), dpi = 300)
+

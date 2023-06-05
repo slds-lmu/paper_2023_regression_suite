@@ -10,6 +10,7 @@ This is the code accompanying the paper *OpenML-CTR23 -- A curated tabular regre
 * The code in the `./analysis` subdirectory produces the results from the paper, including tables and plots.
 * `submission_info.rds` contains information needed to submit the jobs to a cluster.
 * `ids.csv` contains the OpenML task IDs.
+* The folder `results` contains some (intermediate) results
 
 ## Reproducing the Results
 

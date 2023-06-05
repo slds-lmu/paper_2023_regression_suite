@@ -2,6 +2,8 @@
 
 This is the code accompanying the paper *OpenML-CTR23 -- A curated tabular regression benchmarking suite*.
 
+The benchmarking suite on OpenML can be found [here](https://www.openml.org/search?type=study&sort=tasks_included&study_type=task&id=353).
+
 
 ## Overview of files and folders
 

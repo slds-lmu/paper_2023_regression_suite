@@ -3,22 +3,24 @@
 This is the code accompanying the paper *OpenML-CTR23 -- A curated tabular regression benchmarking suite*.
 
 
-## Overview of files
+## Overview of files and folders
 
 * The `renv.lock` file described the computational environment used for the experiments.
 * The files in `./experiment` define the experiments that were run on the cluster.
 * The code in the `./analysis` subdirectory produces the results from the paper, including tables and plots.
+* `submission_info.rds` contains information needed to submit the jobs to a cluster.
+* `ids.csv` contains the OpenML task IDs.
 
 ## Reproducing the Results
 
 ### Running the experiments
 
 1. Install the `renv` package and restore the computational environment using `renv::restore()`.
-1. Adjust the configuration: To be able to run the experiments on a different cluster, the 
+1. Adjust the configuration: To be able to run the experiments on a different cluster, the
 following options have to be adjusted:
    * The `registry_path` in the `.Rprofile` file must link to a path where you want to store the batchtools registry on your cluster.
    * Adjust the batchtools configuration in `batchtools.conf.R`, to your cluster.
-     This includes changing the template `slurm_wyoming.tmpl`. 
+     This includes changing the template `slurm_wyoming.tmpl`.
      For more information see the [batchtools documentation](https://mllg.github.io/batchtools/articles/batchtools.html).
 1. Run the file `./experiment/experiment.R` from the root of this project.
 1. Run the file `./experiment/submit-experiment.R` from the root of this project.

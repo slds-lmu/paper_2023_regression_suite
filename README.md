@@ -11,6 +11,8 @@ This is the code accompanying the paper *OpenML-CTR23 -- A curated tabular regre
 * `submission_info.rds` contains information needed to submit the jobs to a cluster.
 * `ids.csv` contains the OpenML task IDs.
 * The folder `results` contains some (intermediate) results
+* `module_load.sh` loads some modules that were needed on the cluster.
+  This will probably not wor for you.
 
 ## Reproducing the Results
 
@@ -33,4 +35,4 @@ following options have to be adjusted:
 
 In case everything worked, you should now have the experiment results in the path specified in the `registry_path` option.
 If you want to analyze the results locally, you can move the registry to your local machine and adjust the `registry_path_local` option in the `.Rprofile` file to the corresponding folder.
-You then first need to run the `./analysis/benchmark-agggrgate.R` script to produce the files `./results/aggr.rds` and `./results/bma.rds` that some of the other anlysis files require.
+You then first need to run the `./analysis/benchmark-agggrgate.R` script to produce the files `./results/aggr.rds` and `./results/bma.rds` that some of the other analysis files require.

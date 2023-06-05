@@ -14,7 +14,7 @@ The benchmarking suite on OpenML can be found [here](https://www.openml.org/sear
 * `ids.csv` contains the OpenML task IDs.
 * The folder `results` contains some (intermediate) results
 * `module_load.sh` loads some modules that were needed on the cluster.
-  This will probably not wor for you.
+  This will probably not work for you.
 
 ## Reproducing the Results
 

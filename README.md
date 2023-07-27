@@ -12,7 +12,7 @@ The benchmarking suite on OpenML can be found [here](https://www.openml.org/sear
 * The code in the `./analysis` subdirectory produces the results from the paper, including tables and plots.
 * `submission_info.rds` contains information needed to submit the jobs to a cluster.
 * `ids.csv` contains the OpenML task IDs.
-* The folder `results` contains some (intermediate) results
+* The folder `results` contains the results as a csv file, as well as some plots.
 * `module_load.sh` loads some modules that were needed on the cluster.
   This will probably not work for you.
 
